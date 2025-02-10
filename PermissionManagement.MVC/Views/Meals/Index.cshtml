@@ -1,0 +1,109 @@
+﻿@model PermissionManagement.MVC.ViewModels.SearchViewModel
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthorizationService
+@using PermissionManagement.MVC.Constants
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>All Meal List: </h1>
+
+<partial name="_PertialView" />
+
+@if ((AuthorizationService.AuthorizeAsync(User, Permissions.Meals.View)).Result.Succeeded)
+{
+    <div class="col-md-5">
+        <a asp-controller="Meals" asp-action="Create" class="btn btn-primary" style="width: 155px ">
+            <i class="bi bi-plus-circle"></i> &nbsp;Add Meal
+        </a>
+    </div>
+}
+
+<br />
+<div class="col-md-12">
+    <form method="get" asp-action="Index">
+        <div class="form-row">
+           <div class="form-group col-md-3">
+               <label for="StartDate">Satrt Date</label>
+                <input type="date" id="StartDate" name="startDate" class="form-control" value="@Model.StartDate?.ToString("yyyy-MM-dd")" />
+           </div>
+           <div class="form-group col-md-3">
+               <label for="EndDate">End Date</label>
+                <input type="date" id="EndDate" name="endDate" class="form-control" value="@Model.EndDate?.ToString("yyyy-MM-dd")" />
+           </div>
+           <div class="form-group col-md-4">
+                <label for="SelectedMemberId">Select Menber</label>
+                <select id="SelectedMemberId" name="selectedMemberId" class="form-control" asp-items="Model.Members">
+                    <option value="">All</option>
+                </select>
+           </div>
+           <div class="form-group col-md-2">
+               <button class="btn btn-primary" type="submit" style="margin-top:32px">
+                   <i class="fas fa-search fa-sm"></i> Search
+               </button>
+           </div>
+        </div>
+    </form>
+</div>
+
+<br />
+<table class="table">
+    <thead>
+        <tr>
+            <th> @Html.DisplayNameFor(Model => Model.Meals.First().MealId)</th>
+            <th> @Html.DisplayNameFor(Model => Model.Meals.First().EntryDate)</th>
+            <th> @Html.DisplayNameFor(Model => Model.Meals.First().Member.Name)</th>
+            <th> @Html.DisplayNameFor(Model => Model.Meals.First().TodayMeal)</th>
+            <th> @Html.DisplayNameFor(Model => Model.Meals.First().Remarks)</th>
+
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model.Meals) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.MealId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.EntryDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Member.Name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.TodayMeal)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Remarks)
+            </td>
+
+            <td>
+                @if ((AuthorizationService.AuthorizeAsync(User, Permissions.Meals.Edit)).Result.Succeeded)
+                {
+                    <a asp-action="Edit" class="btn btn-info" asp-route-id="@item.MealId"><i class="bi bi-pencil-square"></i></a>
+                }
+                @*@if ((AuthorizationService.AuthorizeAsync(User, Permissions.Meals.Delete)).Result.Succeeded)
+                {
+                    <a asp-action="Delete" class="btn btn-danger" asp-route-id="@item.MealId"><i class="bi bi-trash-fill"></i></a>
+                }*@
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
+
+<div class="d-flex justify-content-between align-items-center" style="margin-right:115px">
+    <span class="p-2">Page @(Model.Meals.PageIndex) of @(Model.Meals.TotalPages)</span>
+    <div>
+        @if (Model.Meals.HasPreviousPage)
+        {
+            @Html.ActionLink("Previous", "Index", new { pageNumber = Model.Meals.PageIndex - 1, startDate = Model.StartDate, endDate = Model.EndDate, selectedMemberId = Model.SelectedMemberId }, new { @class = "btn btn-primary btn-sm mx-1" })
+        }
+        @if (Model.Meals.HasNextPage)
+        {
+            @Html.ActionLink("Next", "Index", new { pageNumber = Model.Meals.PageIndex + 1, startDate = Model.StartDate, endDate = Model.EndDate, selectedMemberId = Model.SelectedMemberId }, new { @class = "btn btn-primary btn-sm mx-1" })
+        }
+    </div>
+</div>
+

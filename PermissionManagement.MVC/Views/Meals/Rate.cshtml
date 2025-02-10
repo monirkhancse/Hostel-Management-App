@@ -1,0 +1,79 @@
+﻿@using System.Globalization
+@model PermissionManagement.MVC.ViewModels.RateViewModel
+
+@* <h2>Month Wise Meal Cost: </h2> *@
+
+@{
+    // Group meals by month
+    var mealsByMonth = Model.Meals
+        .GroupBy(meal => new { Year = meal.EntryDate.Year, Month = meal.EntryDate.Month })
+        .Select(group => new
+        {
+            Year = group.Key.Year,
+            Month = group.Key.Month,
+            TotalMeal = group.Sum(meal => meal.TodayMeal)
+        });
+
+    // Group expenses by month
+    var expensesByMonth = Model.Expenses
+        .GroupBy(expense => new { Year = expense.ExpenseDate.Year, Month = expense.ExpenseDate.Month })
+        .Select(group => new
+        {
+            Year = group.Key.Year,
+            Month = group.Key.Month,
+            TotalExpense = group.Sum(expense => expense.BazarCost)
+        });
+
+    // Group deposits by month
+    var depositsByMonth = Model.Deposits
+        .GroupBy(deposit => new { Year = deposit.DepositDate.Year, Month = deposit.DepositDate.Month })
+        .Select(group => new
+        {
+            Year = group.Key.Year,
+            Month = group.Key.Month,
+            TotalDeposit = group.Sum(deposit => deposit.Amount)
+        });
+
+    // Join the grouped data by month
+    var monthlySummary = from month in mealsByMonth.Select(item => new { item.Year, item.Month })
+                         join meal in mealsByMonth on new { month.Year, month.Month } equals new { meal.Year, meal.Month } into mealGroup
+                         join expense in expensesByMonth on new { month.Year, month.Month } equals new { expense.Year, expense.Month } into expenseGroup
+                         join deposit in depositsByMonth on new { month.Year, month.Month } equals new { deposit.Year, deposit.Month } into depositGroup
+                         select new
+                         {
+                             Year = month.Year,
+                             Month = month.Month,
+                             TotalMeal = mealGroup.Sum(item => item.TotalMeal),
+                             TotalExpense = expenseGroup.Sum(item => item.TotalExpense),
+                             TotalDeposit = depositGroup.Sum(item => item.TotalDeposit),
+                             CashInHand = depositGroup.Sum(item => item.TotalDeposit) - expenseGroup.Sum(item => item.TotalExpense),
+                             CurrentMealRate = expenseGroup.Sum(item => item.TotalExpense) != 0 ?
+                                               Math.Round(expenseGroup.Sum(item => item.TotalExpense) / mealGroup.Sum(item => item.TotalMeal), 2) : 0
+                         };
+
+    // Display the results
+    foreach (var monthSummary in monthlySummary)
+    {
+        <h2>@($"{CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(monthSummary.Month)}, {monthSummary.Year}") Summary</h2>
+        <hr />
+        <p>Total Meal:    @monthSummary.TotalMeal</p>
+        <p>Total Expense: @monthSummary.TotalExpense</p>
+        <p>Total Deposit: @monthSummary.TotalDeposit</p>
+        <p>Cash In Hand:  @monthSummary.CashInHand</p>
+        <p>Current Meal Rate:   <b>@monthSummary.CurrentMealRate</b> </p>
+        
+        <hr />
+    }    
+   
+}
+@foreach (var member in Model.Members)
+{
+    // Find the manager for the current member
+    var currentManager = Model.Managers.SingleOrDefault(m => m.MemberId == member.MemberId);
+
+    // If a manager is found, display the manager's name
+    if (currentManager != null)
+    {
+        <p>Current Manager: @currentManager.Member.Name</p>
+    }
+}

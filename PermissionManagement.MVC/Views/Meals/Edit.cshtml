@@ -1,0 +1,46 @@
+﻿@model PermissionManagement.MVC.Models.Meal
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h4>Edit Meal</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="MealId" />
+            <div class="form-group">
+                <label asp-for="EntryDate" class="control-label"></label>
+                <input asp-for="EntryDate" class="form-control" />
+                <span asp-validation-for="EntryDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="MemberId" class="control-label required"></label>
+                <select asp-for="MemberId" class="form-control" asp-items="ViewBag.MemberId">
+                    <option value="">--Select--</option>
+                </select>
+                <span asp-validation-for="MemberId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="TodayMeal" class="control-label"></label>
+                <input asp-for="TodayMeal" class="form-control" />
+                <span asp-validation-for="TodayMeal" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Remarks" class="control-label"></label>
+                <input asp-for="Remarks" class="form-control" />
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Update Meal" class="btn btn-primary" />
+                <a asp-controller="Meals" asp-action="Index" class="btn btn-secondary">
+                    Back to List
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+

@@ -1,0 +1,126 @@
+﻿@using System.Globalization
+@model PermissionManagement.MVC.ViewModels.RateViewModel
+
+@{
+    var khalaBillPerMember = 500m; // Define Khala bill per member
+
+    var mealsByMonthAndMember = Model.Meals
+        .GroupBy(meal => new { Year = meal.EntryDate.Year, Month = meal.EntryDate.Month, meal.MemberId })
+        .Select(group => new
+        {
+            group.Key.MemberId,
+            group.Key.Year,
+            group.Key.Month,
+            TotalMeal = group.Sum(meal => meal.TodayMeal)
+        })
+        .GroupBy(x => new { x.Year, x.Month })
+        .Select(group => new
+        {
+            Year = group.Key.Year,
+            Month = group.Key.Month,
+            MemberMeals = group.Select(x => new
+            {
+                x.MemberId,
+                x.TotalMeal
+            }).ToList()
+        });
+
+    var expensesByMonth = Model.Expenses
+        .GroupBy(expense => new { Year = expense.ExpenseDate.Year, Month = expense.ExpenseDate.Month })
+        .Select(group => new
+        {
+            Year = group.Key.Year,
+            Month = group.Key.Month,
+            TotalExpense = group.Sum(expense => expense.BazarCost)
+        });
+
+    var depositsByMonthAndMember = Model.Deposits
+        .GroupBy(deposit => new { Year = deposit.DepositDate.Year, Month = deposit.DepositDate.Month, deposit.MemberId })
+        .Select(group => new
+        {
+            group.Key.MemberId,
+            group.Key.Year,
+            group.Key.Month,
+            TotalDeposit = group.Sum(deposit => deposit.Amount)
+        })
+        .GroupBy(x => new { x.Year, x.Month })
+        .Select(group => new
+        {
+            Year = group.Key.Year,
+            Month = group.Key.Month,
+            MemberDeposits = group.Select(x => new
+            {
+                x.MemberId,
+                x.TotalDeposit
+            }).ToList()
+        });
+
+    var combinedData = from meal in mealsByMonthAndMember
+                       join expense in expensesByMonth
+                       on new { meal.Year, meal.Month } equals new { expense.Year, expense.Month }
+                       join deposit in depositsByMonthAndMember
+                       on new { meal.Year, meal.Month } equals new { deposit.Year, deposit.Month }
+                       select new
+                       {
+                           meal.Year,
+                           meal.Month,
+                           TotalMeals = meal.MemberMeals.Sum(mm => mm.TotalMeal),
+                           MemberMeals = meal.MemberMeals,
+                           TotalExpense = meal.MemberMeals.Sum(mm => mm.TotalMeal) * (expense.TotalExpense != 0 ? Math.Round(expense.TotalExpense / meal.MemberMeals.Sum(mm => mm.TotalMeal), 2) : 0),
+                           CurrentMealRate = expense.TotalExpense != 0 ? Math.Round(expense.TotalExpense / meal.MemberMeals.Sum(mm => mm.TotalMeal), 2) : 0,
+                           MemberDeposits = deposit.MemberDeposits,
+                           TotalDeposit = deposit.MemberDeposits.Sum(md => md.TotalDeposit),
+                           MemberExpenses = meal.MemberMeals.Select(mm => new
+                           {
+                               mm.MemberId,
+                               MemberExpense = mm.TotalMeal * (expense.TotalExpense != 0 ? Math.Round(expense.TotalExpense / meal.MemberMeals.Sum(mm => mm.TotalMeal), 2) : 0),
+                               KhalaBill = khalaBillPerMember
+                           }).ToList()
+                       };
+
+    foreach (var monthSummary in combinedData)
+    {
+        <h2>@($"{CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(monthSummary.Month)}, {monthSummary.Year}"), Current Meal Rate: <b>@monthSummary.CurrentMealRate</b></h2>
+        // <p>Total Meals: @monthSummary.TotalMeals</p>
+        // <p>Total Expense: @monthSummary.TotalExpense</p>
+        // <p>Total Deposit: @monthSummary.TotalDeposit</p>
+        // <p>Current Meal Rate: <b>@monthSummary.CurrentMealRate</b></p>
+
+        // <h3>Member-wise Details:</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Member Name</th>
+                    <th>Total Meals</th>
+                    <th>Total Deposit</th>
+                    <th>Meal Expense</th>
+                    <th>Khala Bill</th>
+                    <th>Total Expense</th>
+                    <th>Cash In Hand</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var memberMeal in monthSummary.MemberMeals)
+                {
+                    var member = Model.Members.FirstOrDefault(m => m.MemberId == memberMeal.MemberId);
+                    var memberDeposit = monthSummary.MemberDeposits.FirstOrDefault(md => md.MemberId == memberMeal.MemberId)?.TotalDeposit ?? 0;
+                    var memberExpense = monthSummary.MemberExpenses.FirstOrDefault(me => me.MemberId == memberMeal.MemberId)?.MemberExpense ?? 0;
+                    var khalaBill = monthSummary.MemberExpenses.FirstOrDefault(me => me.MemberId == memberMeal.MemberId)?.KhalaBill ?? 0;
+                    var totalExpense = memberExpense + khalaBill;
+                    var cashInHand = memberDeposit - totalExpense;
+                    <tr>
+                        <td>@member.Name</td>
+                        <td>@memberMeal.TotalMeal</td>
+                        <td>@memberDeposit</td>
+                        <td>@Math.Round(memberExpense, 2)</td>
+                        <td>@khalaBill</td>
+                        <td>@Math.Round(totalExpense, 2)</td>
+                        <td>@Math.Round(cashInHand, 2)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <hr />
+    }
+}

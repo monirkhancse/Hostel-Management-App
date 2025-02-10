@@ -1,0 +1,58 @@
+﻿@model PermissionManagement.MVC.Models.Manager
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h4>Create Manager</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Month" class="control-label required"></label>
+                <select asp-for="Month" class="form-control">
+                    <option value="">Select Month</option>
+                    <option value="January">January</option>
+                    <option value="February">February</option>
+                    <option value="March">March</option>
+                    <option value="April">April</option>
+                    <option value="May">May</option>
+                    <option value="June">June</option>
+                    <option value="July">July</option>
+                    <option value="August">August</option>
+                    <option value="September">September</option>
+                    <option value="October">October</option>
+                    <option value="November">November</option>
+                    <option value="December">December</option>
+                    <!-- Add options for the remaining months -->
+                </select>
+                <span asp-validation-for="Month" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="FromDate" class="control-label"></label>
+                <input asp-for="FromDate" class="form-control" />
+                <span asp-validation-for="FromDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ToDate" class="control-label"></label>
+                <input asp-for="ToDate" class="form-control" />
+                <span asp-validation-for="ToDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="MemberId" class="control-label required"></label>
+                <select asp-for="MemberId" class ="form-control" asp-items="ViewBag.MemberId">
+                    <option value="">--Select--</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Add Manager" class="btn btn-primary" />
+                <a asp-controller="Managers" asp-action="Index" class="btn btn-secondary">
+                    Back to List
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
